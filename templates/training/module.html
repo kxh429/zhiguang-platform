@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ module.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+  <!-- 返回 -->
+  <a href="{{ url_for('training.index') }}" class="inline-flex items-center gap-1 text-sm text-text-dim hover:text-text-main mb-6 transition-colors">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+    <span>返回训练列表</span>
+  </a>
+
+  <!-- 模块头部 -->
+  <div class="mb-6">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: {{ DIMENSIONS[module.dimension].color }}20;">
+        <i data-lucide="{{ DIMENSIONS[module.dimension].icon }}" class="w-5 h-5" style="color: {{ DIMENSIONS[module.dimension].color }};"></i>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <span style="color: {{ DIMENSIONS[module.dimension].color }};">{{ DIMENSIONS[module.dimension].name }}</span>
+        <span class="text-text-dim">/</span>
+        <span class="text-text-dim">{{ {'easy': '入门', 'medium': '进阶', 'hard': '高阶'}[module.difficulty] }}</span>
+      </div>
+    </div>
+    <h1 class="font-sans text-2xl font-bold text-text-main">{{ module.title }}</h1>
+    <p class="text-text-dim text-sm mt-2">{{ module.description }}</p>
+  </div>
+
+  <!-- 训练内容 -->
+  <div class="rounded-2xl bg-white border border-border-l p-6 sm:p-8 mb-6">
+    <div id="training-content" class="prose-content"></div>
+    <script type="application/json" id="training-data">{{ module.content | tojson | safe }}</script>
+  </div>
+
+  <!-- 实践建议 -->
+  {% if module.tips %}
+  <div class="rounded-2xl bg-white border border-border-l p-6 mb-6">
+    <h2 class="font-sans text-lg font-bold text-text-main mb-3 flex items-center gap-2">
+      <i data-lucide="lightbulb" class="w-5 h-5 text-accent"></i>
+      实践建议
+    </h2>
+    <p class="text-sm text-text-dim leading-relaxed">{{ module.tips }}</p>
+  </div>
+  {% endif %}
+
+  <!-- 完成按钮 -->
+  <div class="text-center mb-8">
+    {% if is_completed %}
+    <div class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-success/15 text-success font-medium">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+      <span>已完成此训练</span>
+    </div>
+    {% else %}
+    <form method="POST" action="{{ url_for('training.complete', module_id=module.id) }}">
+      <button type="submit" class="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-accent text-white font-medium hover:bg-accent-dark transition-all shadow-lg shadow-accent/20">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span>完成训练</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- 相关模块 -->
+  {% if related %}
+  <div>
+    <h2 class="font-sans text-base font-bold text-text-main mb-3">同维度训练</h2>
+    <div class="space-y-2">
+      {% for mod in related %}
+      <a href="{{ url_for('training.module_detail', module_id=mod.id) }}" class="flex items-center justify-between p-4 rounded-xl bg-white border border-border-l hover:bg-surface-hl transition-colors group">
+        <span class="text-sm text-text-main">{{ mod.title }}</span>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-text-dim group-hover:text-accent transition-colors"></i>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const raw = JSON.parse(document.getElementById('training-data').textContent);
+  document.getElementById('training-content').innerHTML = marked.parse(raw);
+</script>
+{% endblock %}

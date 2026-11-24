@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}仪表盘{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  <!-- 欢迎区 -->
+  <div class="mb-8">
+    <h1 class="font-sans text-2xl sm:text-3xl font-bold text-text-main">
+      你好，{{ current_user.username }}
+    </h1>
+    <p class="text-text-dim text-sm mt-2">继续你的思维破壁之旅</p>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="rounded-xl bg-white border border-border-l p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-text-dim">测评次数</span>
+        <i data-lucide="clipboard-list" class="w-4 h-4 text-logic"></i>
+      </div>
+      <p class="font-mono text-2xl font-bold text-text-main">{{ assessment_count }}</p>
+    </div>
+
+    <div class="rounded-xl bg-white border border-border-l p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-text-dim">训练完成</span>
+        <i data-lucide="dumbbell" class="w-4 h-4 text-innovation"></i>
+      </div>
+      <p class="font-mono text-2xl font-bold text-text-main">{{ completed_modules }}<span class="text-sm text-text-dim">/{{ total_modules }}</span></p>
+    </div>
+
+    <div class="rounded-xl bg-white border border-border-l p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-text-dim">最近总分</span>
+        <i data-lucide="target" class="w-4 h-4 text-critical"></i>
+      </div>
+      {% if latest_record %}
+      <p class="font-mono text-2xl font-bold text-text-main">{{ latest_record.total_score }}</p>
+      {% else %}
+      <p class="font-mono text-2xl font-bold text-text-dim/50">--</p>
+      {% endif %}
+    </div>
+
+    <div class="rounded-xl bg-white border border-border-l p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-text-dim">训练进度</span>
+        <i data-lucide="trending-up" class="w-4 h-4 text-system"></i>
+      </div>
+      {% if total_modules > 0 %}
+      {% set pct = (completed_modules / total_modules * 100) | round %}
+      {% else %}
+      {% set pct = 0 %}
+      {% endif %}
+      <p class="font-mono text-2xl font-bold text-text-main">{{ pct }}%</p>
+    </div>
+  </div>
+
+  <!-- 主要内容区 -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 左侧：思维画像雷达图 -->
+    <div class="lg:col-span-2 rounded-2xl bg-white border border-border-l p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-sans text-lg font-bold text-text-main">思维画像</h2>
+        {% if latest_record %}
+        <a href="{{ url_for('assessment.result', record_id=latest_record.id) }}" class="text-xs text-accent hover:underline">查看详情</a>
+        {% endif %}
+      </div>
+
+      {% if latest_record %}
+      {% set scores = latest_record.dimension_scores() %}
+      <div class="relative" style="height: 320px;">
+        <canvas id="radarChart"></canvas>
+      </div>
+      {% else %}
+      <div class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-surface-hl flex items-center justify-center mb-4">
+          <i data-lucide="radar" class="w-8 h-8 text-text-dim/50"></i>
+        </div>
+        <p class="text-text-dim mb-4">还没有测评记录</p>
+        <a href="{{ url_for('assessment.index') }}" class="px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent-dark transition-colors">
+          开始第一次测评
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- 右侧：快捷入口 -->
+    <div class="space-y-4">
+      <a href="{{ url_for('assessment.index') }}" class="block rounded-2xl bg-white border border-border-l p-5 hover:border-accent/40 hover:bg-surface-hl transition-all group">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 rounded-xl bg-logic/15 flex items-center justify-center shrink-0">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-logic"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-medium text-text-main text-sm">四维测评</h3>
+            <p class="text-xs text-text-dim mt-0.5">评估思维盲区</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-text-dim group-hover:text-accent transition-colors"></i>
+        </div>
+      </a>
+
+      <a href="{{ url_for('training.index') }}" class="block rounded-2xl bg-white border border-border-l p-5 hover:border-accent/40 hover:bg-surface-hl transition-all group">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 rounded-xl bg-innovation/15 flex items-center justify-center shrink-0">
+            <i data-lucide="dumbbell" class="w-5 h-5 text-innovation"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-medium text-text-main text-sm">思维训练</h3>
+            <p class="text-xs text-text-dim mt-0.5">{{ total_modules }}个训练模块</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-text-dim group-hover:text-accent transition-colors"></i>
+        </div>
+      </a>
+
+      <a href="{{ url_for('report.index') }}" class="block rounded-2xl bg-white border border-border-l p-5 hover:border-accent/40 hover:bg-surface-hl transition-all group">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 rounded-xl bg-critical/15 flex items-center justify-center shrink-0">
+            <i data-lucide="file-text" class="w-5 h-5 text-critical"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-medium text-text-main text-sm">成长报告</h3>
+            <p class="text-xs text-text-dim mt-0.5">{{ assessment_count }}份报告</p>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-text-dim group-hover:text-accent transition-colors"></i>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if latest_record %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  const scores = {
+    logic:      {{ latest_record.dimension_scores().get('logic', 0) }},
+    innovation: {{ latest_record.dimension_scores().get('innovation', 0) }},
+    critical:   {{ latest_record.dimension_scores().get('critical', 0) }},
+    system:     {{ latest_record.dimension_scores().get('system', 0) }},
+  };
+
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['逻辑思维', '创新思维', '批判思维', '系统思维'],
+      datasets: [{
+        label: '维度得分',
+        data: [scores.logic, scores.innovation, scores.critical, scores.system],
+        backgroundColor: 'rgba(212, 165, 116, 0.12)',
+        borderColor: '#D4A574',
+        borderWidth: 2,
+        pointBackgroundColor: '#D4A574',
+        pointBorderColor: '#161727',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0,
+          max: 50,
+          ticks: { color: '#9B9AA6', backdropColor: 'transparent', stepSize: 10, font: { size: 10 } },
+          grid: { color: '#2D2F45' },
+          angleLines: { color: '#2D2F45' },
+          pointLabels: { color: '#F5F0E8', font: { size: 13, family: '"Noto Sans SC"' } },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E1F33',
+          titleColor: '#F5F0E8',
+          bodyColor: '#9B9AA6',
+          borderColor: '#2D2F45',
+          borderWidth: 1,
+          padding: 12,
+        }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

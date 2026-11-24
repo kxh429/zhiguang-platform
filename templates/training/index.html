@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}思维训练{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+  <!-- 标题和进度 -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-sm text-accent uppercase tracking-widest mb-1">Training</p>
+      <h1 class="font-sans text-3xl font-bold text-text-main">思维训练</h1>
+    </div>
+    <div class="text-right">
+      <p class="font-mono text-2xl font-bold text-accent">{{ completed_count }}<span class="text-sm text-text-dim">/{{ total_count }}</span></p>
+      <p class="text-xs text-text-dim">已完成</p>
+    </div>
+  </div>
+
+  <!-- 进度条 -->
+  <div class="h-2 rounded-full bg-surface-hl overflow-hidden mb-8">
+    {% if total_count > 0 %}
+    {% set pct = (completed_count / total_count * 100) | round %}
+    {% else %}
+    {% set pct = 0 %}
+    {% endif %}
+    <div class="h-full bg-accent rounded-full transition-all duration-700" style="width: {{ pct }}%;"></div>
+  </div>
+
+  <!-- 按维度分组 -->
+  {% for dim_key, modules in modules_by_dim.items() %}
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: {{ DIMENSIONS[dim_key].color }}20;">
+        <i data-lucide="{{ DIMENSIONS[dim_key].icon }}" class="w-4 h-4" style="color: {{ DIMENSIONS[dim_key].color }};"></i>
+      </div>
+      <h2 class="font-sans text-lg font-bold" style="color: {{ DIMENSIONS[dim_key].color }};">{{ DIMENSIONS[dim_key].name }}训练</h2>
+      <span class="text-xs text-text-dim">{{ modules | length }}个模块</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {% for module in modules %}
+      <a href="{{ url_for('training.module_detail', module_id=module.id) }}" class="block rounded-xl bg-white border border-border-l p-5 hover:border-accent/40 hover:bg-surface-hl transition-all group">
+        <div class="flex items-start justify-between mb-3">
+          <h3 class="font-medium text-text-main text-sm flex-1">{{ module.title }}</h3>
+          {% if module.user_completed %}
+          <span class="shrink-0 ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/15 text-success text-xs">
+            <i data-lucide="check" class="w-3 h-3"></i>已完成
+          </span>
+          {% else %}
+          <span class="shrink-0 ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-surface-hl text-text-dim text-xs">
+            {{ {'easy': '入门', 'medium': '进阶', 'hard': '高阶'}[module.difficulty] }}
+          </span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-text-dim leading-relaxed mb-3">{{ module.description }}</p>
+        <div class="flex items-center gap-1 text-xs text-accent">
+          <span>{{ '回顾训练' if module.user_completed else '开始训练' }}</span>
+          <i data-lucide="arrow-right" class="w-3 h-3 group-hover:translate-x-1 transition-transform"></i>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
